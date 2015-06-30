@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Spotify Streamer</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- String Placeholder used in the search input field -->
+    <string name="inputSearch">Search artists...</string>
+
+    <!-- Message shown to the user when no artists are found for the given search term -->
+    <string name="no_artists_found">No artists found with name %1$s</string>
+
+</resources>
