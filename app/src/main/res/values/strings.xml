@@ -8,5 +8,6 @@
 
     <!-- Message shown to the user when no artists are found for the given search term -->
     <string name="no_artists_found">No artists found with name %1$s</string>
+    <string name="title_activity_tracks">TracksActivity</string>
 
 </resources>

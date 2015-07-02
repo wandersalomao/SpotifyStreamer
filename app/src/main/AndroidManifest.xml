@@ -10,14 +10,22 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".artists.ArtistisActivity"
+            android:name=".artists.ArtistsActivity"
             android:label="@string/app_name"
-            android:windowSoftInputMode="stateHidden">
+            android:windowSoftInputMode="stateHidden" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".tracks.TracksActivity"
+            android:label="@string/title_activity_tracks"
+            android:parentActivityName=".artists.ArtistsActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".artists.ArtistsActivity" />
         </activity>
     </application>
 

@@ -1,5 +1,6 @@
 package com.example.wandersalomao.spotifystreamer.artists;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -16,6 +18,7 @@ import android.widget.Toast;
 import com.example.wandersalomao.spotifystreamer.R;
 import com.example.wandersalomao.spotifystreamer.artists.adapter.ArtistAdapter;
 import com.example.wandersalomao.spotifystreamer.artists.model.SpotifyArtist;
+import com.example.wandersalomao.spotifystreamer.tracks.TracksActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,13 +35,13 @@ import retrofit.client.Response;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class ArtistisFragment extends Fragment {
+public class ArtistsFragment extends Fragment {
 
-    private final String LOG_TAG = ArtistisFragment.class.getSimpleName();
+    private final String LOG_TAG = ArtistsFragment.class.getSimpleName();
 
     private ArtistAdapter mArtistAdapter;
 
-    public ArtistisFragment() {
+    public ArtistsFragment() {
     }
 
     @Override
@@ -47,11 +50,27 @@ public class ArtistisFragment extends Fragment {
 
         mArtistAdapter = new ArtistAdapter(getActivity(), new ArrayList<SpotifyArtist>());
 
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_artists, container, false);
 
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listView_artists);
         listView.setAdapter(mArtistAdapter);
+
+        // adding the listener to call the Tracks Activity when the user clicks on an artist
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+
+                // get the artist
+                SpotifyArtist artist = mArtistAdapter.getItem(position);
+
+                // create a new Intent associated to the TracksActivity
+                // pass the artist id with the intent so that we can use it to retrieve the top 10 tracks
+                Intent intent = new Intent(getActivity(), TracksActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, artist.getSpotifyId());
+                startActivity(intent);
+            }
+        });
 
         EditText inputSearch = (EditText) rootView.findViewById(R.id.inputSearch);
 
@@ -121,14 +140,14 @@ public class ArtistisFragment extends Fragment {
                             // images of the artist in various sizes, widest first.
                             // for a better performance we load the smallest
                             // which means the last one in this array
-                            String thumbnailUl = "";
+                            String thumbnailUrl = "";
 
                             if (artist.images.size() > 0) {
                                 Image image = artist.images.get(artist.images.size()-1);
-                                thumbnailUl = image.url;
+                                thumbnailUrl = image.url;
                             }
 
-                            artists.add(new SpotifyArtist(artist.id, artist.name, thumbnailUl));
+                            artists.add(new SpotifyArtist(artist.id, artist.name, thumbnailUrl));
                         }
 
                         mArtistAdapter.clear();

@@ -1,7 +1,10 @@
 package com.example.wandersalomao.spotifystreamer.artists.model;
 
 /**
- * This class is a model used to store information from an artist
+ * @author wandersalomao
+ * @since 01/07/2015
+ *
+ * This class is a model used to store information of an artist
  */
 public class SpotifyArtist {
 

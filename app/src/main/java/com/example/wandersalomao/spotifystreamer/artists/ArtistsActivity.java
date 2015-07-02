@@ -8,14 +8,14 @@ import android.view.MenuItem;
 import com.example.wandersalomao.spotifystreamer.R;
 
 
-public class ArtistisActivity extends AppCompatActivity {
+public class ArtistsActivity extends AppCompatActivity {
 
-    private final String LOG_TAG = ArtistisActivity.class.getSimpleName();
+    private final String LOG_TAG = ArtistsActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_artists);
     }
 
     @Override
