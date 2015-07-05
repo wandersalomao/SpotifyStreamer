@@ -21,6 +21,8 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
 
     private static final String LOG_TAG = TrackAdapter.class.getSimpleName();
 
+    private List<SpotifyTrack> tracks;
+
     /**
      * This is our own custom constructor (it doesn't mirror a superclass constructor).
      * The context is used to inflate the layout file, and the List is the data we want
@@ -36,6 +38,11 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
         // Because this is a custom adapter for two TextViews and an ImageView, the adapter is not
         // going to use this second argument, so it can be any value. Here, we used 0.
         super(context, 0, spotifyTracks);
+        this.tracks = spotifyTracks;
+    }
+
+    public List<SpotifyTrack> getTracks() {
+        return this.tracks;
     }
 
     /**

@@ -1,18 +1,24 @@
 package com.example.wandersalomao.spotifystreamer.tracks;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import com.example.wandersalomao.spotifystreamer.R;
+import com.example.wandersalomao.spotifystreamer.artists.model.SpotifyArtist;
 import com.example.wandersalomao.spotifystreamer.tracks.adapter.TrackAdapter;
 import com.example.wandersalomao.spotifystreamer.tracks.model.SpotifyTrack;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,8 +39,10 @@ import retrofit.client.Response;
 public class TracksFragment extends Fragment {
 
     private final String LOG_TAG = TracksFragment.class.getSimpleName();
+    private final String CURRENT_LIST_KEY = "currentListKey";
 
     private TrackAdapter mTrackAdapter;
+    private SpotifyArtist currentArtist;
 
     public TracksFragment() {
     }
@@ -43,26 +51,51 @@ public class TracksFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
         View rootView = inflater.inflate(R.layout.fragment_tracks, container, false);
+
+        if(savedInstanceState == null || !savedInstanceState.containsKey(CURRENT_LIST_KEY)) {
+
+            mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
+
+            // Inspect the intent for artist id data.
+            Intent intent = getActivity().getIntent();
+            if (intent != null) {
+
+                currentArtist = intent.getParcelableExtra(SpotifyArtist.ARTIST_KEY);
+
+                FetchTracksTask task = new FetchTracksTask();
+                task.execute(currentArtist.getSpotifyId());
+
+            } else {
+                Log.e(LOG_TAG, "Could not find the artist id");
+            }
+        } else {
+            List<SpotifyTrack> list = savedInstanceState.getParcelableArrayList(CURRENT_LIST_KEY);
+            currentArtist = (SpotifyArtist) savedInstanceState.getParcelable(SpotifyArtist.ARTIST_KEY);
+
+            mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
+            mTrackAdapter.addAll(list);
+        }
 
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listView_tracks);
         listView.setAdapter(mTrackAdapter);
 
-        // Inspect the intent for artist id data.
-        Intent intent = getActivity().getIntent();
-        if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
+        // load the artist image as background
+        ImageView artistBackground = (ImageView) rootView.findViewById(R.id.artist_image);
 
-            String artistId = intent.getStringExtra(Intent.EXTRA_TEXT);
-
-            FetchTracksTask task = new FetchTracksTask();
-            task.execute(artistId);
-        } else {
-            Log.e(LOG_TAG, "Could not find the artist id");
-        }
+        Picasso.with(getActivity())
+                .load(currentArtist.getThumbnailImageUrl())
+                .into(artistBackground);
 
         return rootView;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(CURRENT_LIST_KEY, new ArrayList<Parcelable>(mTrackAdapter.getTracks()));
+        outState.putParcelable(SpotifyArtist.ARTIST_KEY, this.currentArtist);
+        super.onSaveInstanceState(outState);
     }
 
     /**
@@ -92,9 +125,14 @@ public class TracksFragment extends Fragment {
             // artist name used to filter
             final String artistId = params[0];
 
-            // pass the country - TODO get the country based on the user settings
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String country = prefs.getString(
+                    getString(R.string.pref_country_key),
+                    getString(R.string.pref_country_default));
+
+            // pass the country
             Map<String, Object> options = new HashMap<>();
-            options.put("country", "US");
+            options.put("country", country);
 
             api.getService().getArtistTopTrack(artistId, options, new Callback<Tracks>() {
 

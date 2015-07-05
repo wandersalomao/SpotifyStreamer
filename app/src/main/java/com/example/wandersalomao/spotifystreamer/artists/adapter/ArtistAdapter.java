@@ -58,22 +58,24 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
         }
 
-        if (!artist.getThumbnailImageUrl().isEmpty()) {
-            ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
+        ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
 
+        if (!artist.getThumbnailImageUrl().isEmpty()) {
 
             Picasso.with(getContext())
                     .load(artist.getThumbnailImageUrl())
+                    .error(R.drawable.artist_placeholder)
                     .resize(60, 60)
                     .centerCrop()
                     .transform(new RoundedTransformation(30, 0))
                     .into(thumbnailView);
-
-            /*Picasso.with(getContext())
-                    .load(artist.getThumbnailImageUrl())
-                    .resize(50, 50)
+        } else {
+            Picasso.with(getContext())
+                    .load(R.drawable.artist_placeholder)
+                    .resize(60, 60)
                     .centerCrop()
-                    .into(thumbnailView);*/
+                    .transform(new RoundedTransformation(30, 0))
+                    .into(thumbnailView);
         }
 
         TextView artistNameView = (TextView) convertView.findViewById(R.id.list_item_artist_name);
