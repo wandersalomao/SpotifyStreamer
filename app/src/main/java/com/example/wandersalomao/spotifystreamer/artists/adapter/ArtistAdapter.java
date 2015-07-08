@@ -15,9 +15,14 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
 
-    private static final String LOG_TAG = ArtistAdapter.class.getSimpleName();
+/**
+ * This class is the adapter used to create listview items using the SpotifyArtist object
+ *
+ * @author wandersalomao
+ * @since 25/06/2015
+ */
+public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
 
     /**
      * This is our own custom constructor (it doesn't mirror a superclass constructor).
@@ -58,8 +63,10 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
         }
 
+        // getting the imageView component that contains the artist logo
         ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
 
+        // if the artist contais a thumbnail we render it
         if (!artist.getThumbnailImageUrl().isEmpty()) {
 
             Picasso.with(getContext())
@@ -70,6 +77,8 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
                     .transform(new RoundedTransformation(30, 0))
                     .into(thumbnailView);
         } else {
+
+            // otherwise we render a placeholder image
             Picasso.with(getContext())
                     .load(R.drawable.artist_placeholder)
                     .resize(60, 60)
@@ -78,6 +87,7 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
                     .into(thumbnailView);
         }
 
+        // and here we set the artist name
         TextView artistNameView = (TextView) convertView.findViewById(R.id.list_item_artist_name);
         artistNameView.setText(artist.getName());
 

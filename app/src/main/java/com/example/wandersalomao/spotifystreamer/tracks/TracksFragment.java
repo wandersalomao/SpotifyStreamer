@@ -39,20 +39,33 @@ import retrofit.client.Response;
 public class TracksFragment extends Fragment {
 
     private final String LOG_TAG = TracksFragment.class.getSimpleName();
+
+    // string used as key to save the current state of this fragment
     private final String CURRENT_LIST_KEY = "currentListKey";
 
+    // this is the adapter for this fragment
     private TrackAdapter mTrackAdapter;
+
+    // this variable stores the current artist the user has selected
     private SpotifyArtist currentArtist;
 
-    public TracksFragment() {
-    }
+    public TracksFragment() {}
 
+    /**
+     * This method will create the view
+     *
+     * @param inflater              The layout inflater that will be used to inflate this view
+     * @param container             The view container
+     * @param savedInstanceState    The savedInstanceState object containing previously saved data
+     * @return                      the view created
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_tracks, container, false);
 
+        // if we don' have a previously saved state
         if(savedInstanceState == null || !savedInstanceState.containsKey(CURRENT_LIST_KEY)) {
 
             mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
@@ -70,8 +83,11 @@ public class TracksFragment extends Fragment {
                 Log.e(LOG_TAG, "Could not find the artist id");
             }
         } else {
+
+            // in this case there is a previsouly saved state so instead of calling the remote
+            // service again we retrieve the tracks using the savedInstanceState object
             List<SpotifyTrack> list = savedInstanceState.getParcelableArrayList(CURRENT_LIST_KEY);
-            currentArtist = (SpotifyArtist) savedInstanceState.getParcelable(SpotifyArtist.ARTIST_KEY);
+            currentArtist = savedInstanceState.getParcelable(SpotifyArtist.ARTIST_KEY);
 
             mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
             mTrackAdapter.addAll(list);
@@ -91,19 +107,27 @@ public class TracksFragment extends Fragment {
         return rootView;
     }
 
+    /**
+     * This method will save information of the current state of this fragment based on some events,
+     * for example when the user rotates the device
+     *
+     * @param outState  the state object that will be used to save information of the current state
+     */
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        // we save the list of tracks and the current artist selected
         outState.putParcelableArrayList(CURRENT_LIST_KEY, new ArrayList<Parcelable>(mTrackAdapter.getTracks()));
         outState.putParcelable(SpotifyArtist.ARTIST_KEY, this.currentArtist);
         super.onSaveInstanceState(outState);
     }
 
     /**
+     * This is an internal class that will be used to download the top tracks of an artist in
+     * background
+     *
      * @author wsalomao
      * @since 01/07/2015
      *
-     * This is an internal class that will be used to download the tracks of an artist in
-     * background
      */
     public class FetchTracksTask extends AsyncTask<String, Void, List<SpotifyTrack>> {
 
@@ -116,8 +140,6 @@ public class TracksFragment extends Fragment {
             if (params.length == 0) {
                 return null;
             }
-
-            final List<SpotifyTrack> listOfTracks = new ArrayList<>();
 
             // Spotify API
             SpotifyApi api = new SpotifyApi();
@@ -139,42 +161,41 @@ public class TracksFragment extends Fragment {
                 @Override
                 public void success(Tracks tracks, Response response) {
 
-                    for (Track track : tracks.tracks) {
+                    if (!tracks.tracks.isEmpty()) {
 
-                        String thumbnailUrl = "";
+                        List<SpotifyTrack> listOfTracks = new ArrayList<>();
 
-                        if (track.album.images.size() > 0) {
-                            Image image = track.album.images.get(0);
-                            thumbnailUrl = image.url;
+                        for (Track track : tracks.tracks) {
+
+                            String thumbnailUrl = "";
+
+                            if (track.album.images.size() > 0) {
+                                Image image = track.album.images.get(0);
+                                thumbnailUrl = image.url;
+                            }
+
+                            listOfTracks.add(new SpotifyTrack(track.name,
+                                    track.album.name,
+                                    thumbnailUrl,
+                                    track.preview_url));
                         }
 
-                        listOfTracks.add(new SpotifyTrack(track.name,
-                                track.album.name,
-                                thumbnailUrl,
-                                track.preview_url));
+                        mTrackAdapter.clear();
+                        mTrackAdapter.addAll(listOfTracks);
                     }
-
-                    mTrackAdapter.clear();
-                    mTrackAdapter.addAll(listOfTracks);
-
                 }
 
                 @Override
                 public void failure(RetrofitError error) {
-
                     Log.e(LOG_TAG, error.getMessage());
                 }
-
             });
 
-            return listOfTracks;
+            // we return an empty list here because the success method is the one responsible for
+            // adding the elements to the adapter
+            return new ArrayList<>();
         }
 
-        @Override
-        protected void onPostExecute(List<SpotifyTrack> tracks) {
-            mTrackAdapter.clear();
-            mTrackAdapter.addAll(tracks);
-        }
     }
 
 }

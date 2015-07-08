@@ -8,6 +8,9 @@ import android.preference.PreferenceManager;
 
 import com.example.wandersalomao.spotifystreamer.R;
 
+/**
+ * This is the activity class for the settings menu
+ */
 public class SettingsActivity extends PreferenceActivity implements Preference.OnPreferenceChangeListener {
 
     @Override

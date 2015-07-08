@@ -36,24 +36,29 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 /**
- * A placeholder fragment containing a simple view.
+ * A placeholder fragment containing a simple view. This fragment also implements the
+ * SearchView.OnQueryTextListener interface that will be used to handle the searchView widget
  */
 public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextListener {
-
-    private final String LOG_TAG = ArtistsFragment.class.getSimpleName();
 
     private ArtistAdapter mArtistAdapter;
     private SearchView mSearchView;
 
-    public ArtistsFragment() {
-    }
+    /* Public constructor */
+    public ArtistsFragment() {}
 
+    /**
+     *  Inflate the menu; this adds items to the action bar if it is present.
+     *
+     * @param menu      The current menu
+     * @param inflater  The MenuInfraler used to inflate the menu
+     */
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         super.onCreateOptionsMenu(menu, inflater);
-
         getActivity().getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        // initializing the search view
         MenuItem searchItem = menu.findItem(R.id.action_search);
         mSearchView = (SearchView) searchItem.getActionView();
 
@@ -63,14 +68,18 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         mSearchView.setOnQueryTextListener(this);
     }
 
+    /**
+     * Handle action bar item clicks here. The action bar will automatically handle clicks on the
+     * Home/Up button, so long as you specify a parent activity in AndroidManifest.xml.
+     *
+     * @param item  The menu item selected
+     * @return      boolean value
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
+        // if user has selected the settings option we start the Settings Activity
         if (id == R.id.action_settings) {
             startActivity(new Intent(this.getActivity(), SettingsActivity.class));
             return true;
@@ -79,7 +88,14 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         return super.onOptionsItemSelected(item);
     }
 
-
+    /**
+     * This method will create the view
+     *
+     * @param inflater              The layout inflater that will be used to inflate this view
+     * @param container             The view container
+     * @param savedInstanceState    The savedInstanceState object containing previously saved data
+     * @return                      the view created
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -94,10 +110,13 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listView_artists);
         listView.setAdapter(mArtistAdapter);
+
+        // set the emptyView template to be used when the list view is empty
         listView.setEmptyView(rootView.findViewById(R.id.empty));
 
         // adding the listener to call the Tracks Activity when the user clicks on an artist
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
 
@@ -105,7 +124,7 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
                 SpotifyArtist artist = mArtistAdapter.getItem(position);
 
                 // create a new Intent associated to the TracksActivity
-                // pass the artist id with the intent so that we can use it to retrieve the top 10 tracks
+                // pass the artist with the intent so that we can use it to retrieve the top 10 tracks
                 Intent intent = new Intent(getActivity(), TracksActivity.class)
                         .putExtra(SpotifyArtist.ARTIST_KEY, artist);
 
@@ -113,55 +132,42 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
             }
         });
 
-        //EditText inputSearch = (EditText) rootView.findViewById(R.id.inputSearch);
-
-        /**
-         * Enabling Search Filter
-         * */
-/*
-        inputSearch.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void onTextChanged(CharSequence cs, int arg1, int arg2, int arg3) {
-                // When user changed the Text
-                FetchArtistsTask task = new FetchArtistsTask();
-                task.execute(cs.toString());
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence arg0, int arg1, int arg2,
-                                          int arg3) {
-                // TODO Auto-generated method stub
-            }
-
-            @Override
-            public void afterTextChanged(Editable arg0) {
-                // TODO Auto-generated method stub
-                Log.v(LOG_TAG, "Test");
-            }
-        });
-
-*/
         return rootView;
     }
 
+    /**
+     * This method is called every time a user types on the searchView widget. We're searching for
+     * artists using this method so that we can show partial results to the user
+     *
+     * @param newText   The text entered by the user
+     * @return          a boolean value
+     */
     public boolean onQueryTextChange(String newText) {
+        // every time the user changes the text we execute the search
         FetchArtistsTask task = new FetchArtistsTask();
         task.execute(newText);
 
-        return false;
+        return true;
     }
 
+    /**
+     * This method will be called when the user clicks on the search button on his keyboard to
+     * submit the search.
+     *
+     * @param query The text user has typed
+     * @return      a boolean value
+     */
     public boolean onQueryTextSubmit(String query) {
-        // this will hide the keyboard
+        // remove the focus from the searchView widget so that the keyboard will be hidden
         mSearchView.clearFocus();
         return true;
     }
 
-    public boolean onClose() {
-        return false;
-    }
-
+    /**
+     * This class will asynchronously search for artists based on the text entered by the user
+     *
+     * @author wandersalomao
+     */
     public class FetchArtistsTask extends AsyncTask<String, Void, List<SpotifyArtist>> {
 
         private final String LOG_TAG = FetchArtistsTask.class.getSimpleName();
@@ -179,7 +185,7 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
 
             final List<SpotifyArtist> artists = new ArrayList<>();
 
-            final TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
+            //final TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
 
             // Spotify API
             SpotifyApi api = new SpotifyApi();
@@ -190,27 +196,17 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
                 @Override
                 public void success(ArtistsPager artistsPager, Response response) {
 
-                    // if no artists are found we shoud a message to the user
-                    if (artistsPager.artists.items.size() <= 0) {
+                    String emptyMessage = "";
 
-                        emptyView.setText(getString(R.string.no_artists_found, artistName));
+                    // if artists were found
+                    if (artistsPager.artists.items.size() > 0) {
 
-                        //String message = getString(R.string.no_artists_found, artistName);
-                        //Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
-
-                    } else {
-                        emptyView.setText("");
-
+                        // for each artist we create a SpotifyArtist object
                         for (Artist artist : artistsPager.artists.items) {
 
-                            // the Spotify API says that the image field returns
-                            // images of the artist in various sizes, widest first.
-                            // for a better performance we load the smallest
-                            // which means the last one in this array
                             String thumbnailUrl = "";
 
                             if (artist.images.size() > 0) {
-                                //Image image = artist.images.get(artist.images.size()-1);
                                 Image image = artist.images.get(0);
                                 thumbnailUrl = image.url;
                             }
@@ -221,6 +217,16 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
                         mArtistAdapter.clear();
                         mArtistAdapter.addAll(artists);
 
+                    } else {
+                        // if not artists were found we configure the message that will be shown to the user
+                        emptyMessage = getString(R.string.no_artists_found, artistName);
+                    }
+
+                    if (getView() != null) {
+                        TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
+                        emptyView.setText(emptyMessage);
+                    } else {
+                        Log.w(LOG_TAG, "Was not able to retrieve the empty view layout");
                     }
                 }
 
@@ -236,6 +242,7 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         @Override
         protected void onPostExecute(List<SpotifyArtist> spotifyArtists) {
 
+            // here we clear the adapter if no artists were returned
             if (spotifyArtists == null || spotifyArtists.isEmpty()) {
                 mArtistAdapter.clear();
             }

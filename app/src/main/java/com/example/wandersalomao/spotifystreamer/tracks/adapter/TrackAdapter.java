@@ -15,12 +15,11 @@ import com.squareup.picasso.Picasso;
 import java.util.List;
 
 /**
- * Created by wandersalomao on 02/07/2015.
+ * This class is the adapter used to create listview items using the SpotifyTrack object
  */
 public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
 
-    private static final String LOG_TAG = TrackAdapter.class.getSimpleName();
-
+    // internal property used to store the list of tracks of a given artist
     private List<SpotifyTrack> tracks;
 
     /**
@@ -51,7 +50,7 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
      * @param position    The AdapterView position that is requesting a view
      * @param convertView The recycled view to populate.
      *                    (search online for "android view recycling" to learn more)
-     * @param parent The parent ViewGroup that is used for inflation.
+     * @param parent      The parent ViewGroup that is used for inflation.
      * @return The View for the position in the AdapterView.
      */
     @Override
@@ -68,6 +67,7 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_track, parent, false);
         }
 
+        // if the track contains a thumbnail image we set the icon view using Picasso
         if (!track.getThumbnailImageUrl().isEmpty()) {
             ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
 
@@ -78,9 +78,11 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
                     .into(thumbnailView);
         }
 
+        // set the track name
         TextView trackNameView = (TextView) convertView.findViewById(R.id.list_item_track_name);
         trackNameView.setText(track.getTrackName());
 
+        // set the album name
         TextView albumNameView = (TextView) convertView.findViewById(R.id.list_item_album_name);
         albumNameView.setText(track.getAlbumName());
 
