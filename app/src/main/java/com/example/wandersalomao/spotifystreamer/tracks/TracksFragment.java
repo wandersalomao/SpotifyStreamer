@@ -15,11 +15,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.example.wandersalomao.spotifystreamer.R;
 import com.example.wandersalomao.spotifystreamer.artists.model.SpotifyArtist;
 import com.example.wandersalomao.spotifystreamer.tracks.adapter.TrackAdapter;
 import com.example.wandersalomao.spotifystreamer.tracks.model.SpotifyTrack;
+import com.example.wandersalomao.spotifystreamer.util.ConnectivityUtil;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -31,9 +34,6 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
-import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -51,6 +51,8 @@ public class TracksFragment extends Fragment {
     // this variable stores the current artist the user has selected
     private SpotifyArtist currentArtist;
 
+    private ProgressBar mProgressBar;
+
     public TracksFragment() {}
 
     /**
@@ -67,6 +69,8 @@ public class TracksFragment extends Fragment {
 
         View rootView = inflater.inflate(R.layout.fragment_tracks, container, false);
 
+        mProgressBar = (ProgressBar) rootView.findViewById(R.id.tracksProgressBar);
+
         // if we don' have a previously saved state
         if(savedInstanceState == null || !savedInstanceState.containsKey(CURRENT_LIST_KEY)) {
 
@@ -78,8 +82,14 @@ public class TracksFragment extends Fragment {
 
                 currentArtist = intent.getParcelableExtra(SpotifyArtist.ARTIST_KEY);
 
-                FetchTracksTask task = new FetchTracksTask();
-                task.execute(currentArtist.getSpotifyId());
+                if (ConnectivityUtil.isNetworkAvailable(getActivity())) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+
+                    FetchTracksTask task = new FetchTracksTask();
+                    task.execute(currentArtist.getSpotifyId());
+                } else {
+                    displayMessage(getString(R.string.error_connection));
+                }
 
             } else {
                 Log.e(LOG_TAG, "Could not find the artist id");
@@ -98,6 +108,9 @@ public class TracksFragment extends Fragment {
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listView_tracks);
         listView.setAdapter(mTrackAdapter);
+
+        // set the emptyView template to be used when the list view is empty
+        listView.setEmptyView(rootView.findViewById(R.id.empty));
 
         // if the current artist has a thumbnail image we load it as the background image
         if (!currentArtist.getThumbnailImageUrl().isEmpty()) {
@@ -124,6 +137,33 @@ public class TracksFragment extends Fragment {
         outState.putParcelableArrayList(CURRENT_LIST_KEY, new ArrayList<Parcelable>(mTrackAdapter.getTracks()));
         outState.putParcelable(SpotifyArtist.ARTIST_KEY, this.currentArtist);
         super.onSaveInstanceState(outState);
+    }
+
+    /**
+     * This method will display a message to the user
+     *
+     * @param message   The message that will be displayed to the user
+     */
+    public void displayMessage(String message) {
+        // show a message to the user
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+        builder.setTitle(R.string.error);
+        builder.setMessage(message);
+        builder.setIcon(android.R.drawable.ic_dialog_alert);
+        builder.setCancelable(false);
+
+        // Add the buttons
+        builder.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+                dialog.cancel();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     /**
@@ -159,64 +199,68 @@ public class TracksFragment extends Fragment {
             Map<String, Object> options = new HashMap<>();
             options.put("country", country);
 
-            api.getService().getArtistTopTrack(artistId, options, new Callback<Tracks>() {
+            final List<SpotifyTrack> topTracks = new ArrayList<>();
 
-                @Override
-                public void success(Tracks tracks, Response response) {
+            try {
 
-                    if (!tracks.tracks.isEmpty()) {
+                Tracks tracks = api.getService().getArtistTopTrack(artistId, options);
 
-                        List<SpotifyTrack> listOfTracks = new ArrayList<>();
+                if (!tracks.tracks.isEmpty()) {
 
-                        for (Track track : tracks.tracks) {
+                    for (Track track : tracks.tracks) {
 
-                            String thumbnailUrl = "";
+                        String thumbnailUrl = "";
 
-                            if (track.album.images.size() > 0) {
-                                Image image = track.album.images.get(0);
-                                thumbnailUrl = image.url;
-                            }
-
-                            listOfTracks.add(new SpotifyTrack(track.name,
-                                    track.album.name,
-                                    thumbnailUrl,
-                                    track.preview_url));
+                        if (track.album.images.size() > 0) {
+                            Image image = track.album.images.get(0);
+                            thumbnailUrl = image.url;
                         }
 
-                        mTrackAdapter.clear();
-                        mTrackAdapter.addAll(listOfTracks);
+                        topTracks.add(new SpotifyTrack(track.name,
+                                track.album.name,
+                                thumbnailUrl,
+                                track.preview_url));
                     }
                 }
 
-                @Override
-                public void failure(RetrofitError error) {
-                    // show a message to the user
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            } catch (final Exception e) {
 
-                    builder.setTitle(R.string.error);
-                    builder.setMessage(error.getMessage());
-                    builder.setIcon(android.R.drawable.ic_dialog_alert);
-                    builder.setCancelable(false);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        displayMessage(getString(R.string.error_executing_api));
+                    }
+                });
+            }
 
-                    // Add the buttons
-                    builder.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User clicked OK button
-                            dialog.cancel();
-                        }
-                    });
-
-                    // Create the AlertDialog
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-                }
-            });
-
-            // we return an empty list here because the success method is the one responsible for
-            // adding the elements to the adapter
-            return new ArrayList<>();
+            return topTracks;
         }
 
+        @Override
+        protected void onPostExecute(List<SpotifyTrack> spotifyTracks) {
+            String emptyMessage = "";
+
+            // here we clear the adapter if no artists were returned
+            if (spotifyTracks == null || spotifyTracks.isEmpty()) {
+
+                // if not artists were found we configure the message that will be shown to the user
+                emptyMessage = getString(R.string.no_tracks_found, currentArtist.getName());
+                mTrackAdapter.clear();
+            } else {
+                mTrackAdapter.addAll(spotifyTracks);
+            }
+
+            if (mProgressBar != null)
+                mProgressBar.setVisibility(View.GONE);
+
+            if (getView() != null) {
+                TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
+                emptyView.setText(emptyMessage);
+            } else {
+                Log.w(LOG_TAG, "Was not able to retrieve the empty view layout");
+            }
+
+        }
     }
 
 }

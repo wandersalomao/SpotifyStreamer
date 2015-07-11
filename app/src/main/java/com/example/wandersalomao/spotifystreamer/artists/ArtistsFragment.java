@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.wandersalomao.spotifystreamer.R;
@@ -26,6 +27,7 @@ import com.example.wandersalomao.spotifystreamer.Settings.SettingsActivity;
 import com.example.wandersalomao.spotifystreamer.artists.adapter.ArtistAdapter;
 import com.example.wandersalomao.spotifystreamer.artists.model.SpotifyArtist;
 import com.example.wandersalomao.spotifystreamer.tracks.TracksActivity;
+import com.example.wandersalomao.spotifystreamer.util.ConnectivityUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +36,6 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
 import kaaes.spotify.webapi.android.models.Image;
-import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 
 /**
  * A placeholder fragment containing a simple view. This fragment also implements the
@@ -49,6 +48,7 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
 
     private ArtistAdapter mArtistAdapter;
     private SearchView mSearchView;
+    private ProgressBar mProgressBar;
 
     /* Public constructor */
     public ArtistsFragment() {}
@@ -114,6 +114,8 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         // initially the adapter contains en empty list
         mArtistAdapter = new ArtistAdapter(getActivity(), new ArrayList<SpotifyArtist>());
 
+        mProgressBar = (ProgressBar) rootView.findViewById(R.id.artistsProgressBar);
+
         // if we have a previously saved state
         if(savedInstanceState != null && savedInstanceState.containsKey(CURRENT_LIST_KEY)) {
             List<SpotifyArtist> list = savedInstanceState.getParcelableArrayList(CURRENT_LIST_KEY);
@@ -169,9 +171,15 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
      * @return          a boolean value
      */
     public boolean onQueryTextChange(String newText) {
-        // every time the user changes the text we execute the search
-        FetchArtistsTask task = new FetchArtistsTask();
-        task.execute(newText);
+
+        if (ConnectivityUtil.isNetworkAvailable(getActivity())) {
+            // every time the user changes the text we execute the search
+            mProgressBar.setVisibility(View.VISIBLE);
+            FetchArtistsTask task = new FetchArtistsTask();
+            task.execute(newText);
+        } else {
+            displayMessage(getString(R.string.error_connection));
+        }
 
         return true;
     }
@@ -190,6 +198,33 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
     }
 
     /**
+     * This method will display a message to the user
+     *
+     * @param message   The message that will be displayed to the user
+     */
+    public void displayMessage(String message) {
+        // show a message to the user
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+        builder.setTitle(R.string.error);
+        builder.setMessage(message);
+        builder.setIcon(android.R.drawable.ic_dialog_alert);
+        builder.setCancelable(false);
+
+        // Add the buttons
+        builder.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+                dialog.cancel();
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    /**
      * This class will asynchronously search for artists based on the text entered by the user
      *
      * @author wandersalomao
@@ -197,6 +232,8 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
     public class FetchArtistsTask extends AsyncTask<String, Void, List<SpotifyArtist>> {
 
         private final String LOG_TAG = FetchArtistsTask.class.getSimpleName();
+
+        private String mArtistName; // used to filter artists
 
         @Override
         protected List<SpotifyArtist> doInBackground(String... params) {
@@ -208,79 +245,44 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
 
             // artist name used to filter
             final String artistName = params[0];
-
             final List<SpotifyArtist> artists = new ArrayList<>();
 
-            //final TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
+            mArtistName = artistName;
 
             // Spotify API
             SpotifyApi api = new SpotifyApi();
 
-            // search artists using the given name
-            api.getService().searchArtists(artistName, new Callback<ArtistsPager>() {
+            try {
 
-                @Override
-                public void success(ArtistsPager artistsPager, Response response) {
+                // get the list of artists
+                ArtistsPager artistsPager = api.getService().searchArtists(artistName);
 
-                    String emptyMessage = "";
+                // if artists were found
+                if (artistsPager.artists.items.size() > 0) {
 
-                    // if artists were found
-                    if (artistsPager.artists.items.size() > 0) {
+                    // for each artist we create a SpotifyArtist object
+                    for (Artist artist : artistsPager.artists.items) {
 
-                        // for each artist we create a SpotifyArtist object
-                        for (Artist artist : artistsPager.artists.items) {
+                        String thumbnailUrl = "";
 
-                            String thumbnailUrl = "";
-
-                            if (artist.images.size() > 0) {
-                                Image image = artist.images.get(0);
-                                thumbnailUrl = image.url;
-                            }
-
-                            artists.add(new SpotifyArtist(artist.id, artist.name, thumbnailUrl));
+                        if (artist.images.size() > 0) {
+                            Image image = artist.images.get(0);
+                            thumbnailUrl = image.url;
                         }
 
-                        mArtistAdapter.clear();
-                        mArtistAdapter.addAll(artists);
-
-                    } else {
-                        // if not artists were found we configure the message that will be shown to the user
-                        emptyMessage = getString(R.string.no_artists_found, artistName);
-                    }
-
-                    if (getView() != null) {
-                        TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
-                        emptyView.setText(emptyMessage);
-                    } else {
-                        Log.w(LOG_TAG, "Was not able to retrieve the empty view layout");
+                        artists.add(new SpotifyArtist(artist.id, artist.name, thumbnailUrl));
                     }
                 }
 
-                @Override
-                public void failure(RetrofitError error) {
+            } catch (final Exception e) {
 
-                    // show a message to the user
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-                    builder.setTitle(R.string.error);
-                    builder.setMessage(error.getMessage());
-                    builder.setIcon(android.R.drawable.ic_dialog_alert);
-                    builder.setCancelable(false);
-
-                    // Add the buttons
-                    builder.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User clicked OK button
-                            dialog.cancel();
-                        }
-                    });
-
-                    // Create the AlertDialog
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-
-                }
-            });
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        displayMessage(getString(R.string.error_executing_api));
+                    }
+                });
+            }
 
             return artists;
         }
@@ -288,9 +290,26 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         @Override
         protected void onPostExecute(List<SpotifyArtist> spotifyArtists) {
 
+            String emptyMessage = "";
+
             // here we clear the adapter if no artists were returned
             if (spotifyArtists == null || spotifyArtists.isEmpty()) {
+
+                // if not artists were found we configure the message that will be shown to the user
+                emptyMessage = getString(R.string.no_artists_found, mArtistName);
                 mArtistAdapter.clear();
+            } else {
+                mArtistAdapter.addAll(spotifyArtists);
+            }
+
+            if (mProgressBar != null)
+                mProgressBar.setVisibility(View.GONE);
+
+            if (getView() != null && mArtistName != null) {
+                TextView emptyView = (TextView) getView().findViewById(R.id.empty_text_message);
+                emptyView.setText(emptyMessage);
+            } else {
+                Log.w(LOG_TAG, "Was not able to retrieve the empty view layout");
             }
 
         }

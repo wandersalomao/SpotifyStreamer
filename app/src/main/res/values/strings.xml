@@ -12,6 +12,9 @@
 
     <!-- Message shown to the user when no artists are found for the given search term -->
     <string name="no_artists_found">No artists found with name %1$s</string>
+    <string name="no_tracks_found">No tracks found for %1$s</string>
+    <string name="error_executing_api">Error when calling the Spotify API - please try again</string>
+    <string name="error_connection">Could not connect to the Spotify API - check your network connectivity</string>
     <string name="title_activity_tracks">Top 10 Tracks</string>
     <string name="title_activity_settings">Settings</string>
 
