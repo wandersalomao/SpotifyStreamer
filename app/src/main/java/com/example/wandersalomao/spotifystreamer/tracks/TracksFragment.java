@@ -1,5 +1,6 @@
 package com.example.wandersalomao.spotifystreamer.tracks;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -97,12 +99,15 @@ public class TracksFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listView_tracks);
         listView.setAdapter(mTrackAdapter);
 
-        // load the artist image as background
-        ImageView artistBackground = (ImageView) rootView.findViewById(R.id.artist_image);
+        // if the current artist has a thumbnail image we load it as the background image
+        if (!currentArtist.getThumbnailImageUrl().isEmpty()) {
+            // load the artist image as background
+            ImageView artistBackground = (ImageView) rootView.findViewById(R.id.artist_image);
 
-        Picasso.with(getActivity())
-                .load(currentArtist.getThumbnailImageUrl())
-                .into(artistBackground);
+            Picasso.with(getActivity())
+                    .load(currentArtist.getThumbnailImageUrl())
+                    .into(artistBackground);
+        }
 
         return rootView;
     }
@@ -130,8 +135,6 @@ public class TracksFragment extends Fragment {
      *
      */
     public class FetchTracksTask extends AsyncTask<String, Void, List<SpotifyTrack>> {
-
-        private final String LOG_TAG = FetchTracksTask.class.getSimpleName();
 
         @Override
         protected List<SpotifyTrack> doInBackground(String... params) {
@@ -187,7 +190,25 @@ public class TracksFragment extends Fragment {
 
                 @Override
                 public void failure(RetrofitError error) {
-                    Log.e(LOG_TAG, error.getMessage());
+                    // show a message to the user
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+                    builder.setTitle(R.string.error);
+                    builder.setMessage(error.getMessage());
+                    builder.setIcon(android.R.drawable.ic_dialog_alert);
+                    builder.setCancelable(false);
+
+                    // Add the buttons
+                    builder.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User clicked OK button
+                            dialog.cancel();
+                        }
+                    });
+
+                    // Create the AlertDialog
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
                 }
             });
 

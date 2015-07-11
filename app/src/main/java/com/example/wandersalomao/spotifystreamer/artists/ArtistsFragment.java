@@ -2,10 +2,13 @@ package com.example.wandersalomao.spotifystreamer.artists;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -40,6 +43,9 @@ import retrofit.client.Response;
  * SearchView.OnQueryTextListener interface that will be used to handle the searchView widget
  */
 public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextListener {
+
+    // string used as key to save the current state of this fragment
+    private final String CURRENT_LIST_KEY = "currentListKey";
 
     private ArtistAdapter mArtistAdapter;
     private SearchView mSearchView;
@@ -100,12 +106,19 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        View rootView = inflater.inflate(R.layout.fragment_artists, container, false);
+
         // this will enable the Options Menus to appear on the Action Bar
         setHasOptionsMenu(true);
 
+        // initially the adapter contains en empty list
         mArtistAdapter = new ArtistAdapter(getActivity(), new ArrayList<SpotifyArtist>());
 
-        View rootView = inflater.inflate(R.layout.fragment_artists, container, false);
+        // if we have a previously saved state
+        if(savedInstanceState != null && savedInstanceState.containsKey(CURRENT_LIST_KEY)) {
+            List<SpotifyArtist> list = savedInstanceState.getParcelableArrayList(CURRENT_LIST_KEY);
+            mArtistAdapter.addAll(list);
+        }
 
         // Get a reference to the ListView, and attach this adapter to it.
         ListView listView = (ListView) rootView.findViewById(R.id.listView_artists);
@@ -133,6 +146,19 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
         });
 
         return rootView;
+    }
+
+    /**
+     * This method will save information of the current state of this fragment based on some events,
+     * for example when the user rotates the device
+     *
+     * @param outState  the state object that will be used to save information of the current state
+     */
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        // we save the list of artists
+        outState.putParcelableArrayList(CURRENT_LIST_KEY, new ArrayList<Parcelable>(mArtistAdapter.getArtists()));
+        super.onSaveInstanceState(outState);
     }
 
     /**
@@ -232,7 +258,27 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
 
                 @Override
                 public void failure(RetrofitError error) {
-                    Log.e(LOG_TAG, error.getMessage());
+
+                    // show a message to the user
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+                    builder.setTitle(R.string.error);
+                    builder.setMessage(error.getMessage());
+                    builder.setIcon(android.R.drawable.ic_dialog_alert);
+                    builder.setCancelable(false);
+
+                    // Add the buttons
+                    builder.setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User clicked OK button
+                            dialog.cancel();
+                        }
+                    });
+
+                    // Create the AlertDialog
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+
                 }
             });
 

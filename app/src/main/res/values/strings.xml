@@ -4,6 +4,9 @@
     <string name="action_settings">Settings</string>
     <string name="action_search">Search</string>
 
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+
     <!-- String Placeholder used in the search input field -->
     <string name="inputSearch">Search artists...</string>
 

@@ -24,6 +24,9 @@ import java.util.List;
  */
 public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
 
+    // internal property used to store the list of artists
+    private List<SpotifyArtist> artists;
+
     /**
      * This is our own custom constructor (it doesn't mirror a superclass constructor).
      * The context is used to inflate the layout file, and the List is the data we want
@@ -38,6 +41,11 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
         // Because this is a custom adapter for two TextViews and an ImageView, the adapter is not
         // going to use this second argument, so it can be any value. Here, we used 0.
         super(context, 0, spotifyArtists);
+        this.artists = spotifyArtists;
+    }
+
+    public List<SpotifyArtist> getArtists() {
+        return this.artists;
     }
 
     /**
@@ -54,6 +62,7 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
 
         // Gets the SpotifyArtist object from the ArrayAdapter at the appropriate position
         SpotifyArtist artist = getItem(position);
+        ArtistViewHolder viewHolder;
 
         // Adapters recycle views to AdapterViews.
         // If this is a new View object we're getting, then inflate the layout.
@@ -61,10 +70,18 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
         // and we modify the View widgets as usual.
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
-        }
 
-        // getting the imageView component that contains the artist logo
-        ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
+            // set up the view holder
+            viewHolder = new ArtistViewHolder();
+            viewHolder.thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
+            viewHolder.artistNameView = (TextView) convertView.findViewById(R.id.list_item_artist_name);
+
+            // store the view holder with the view.
+            convertView.setTag(viewHolder);
+        } else {
+            // we use the viewHolder to avoid calling findViewById() on resource everytime
+            viewHolder = (ArtistViewHolder) convertView.getTag();
+        }
 
         // if the artist contais a thumbnail we render it
         if (!artist.getThumbnailImageUrl().isEmpty()) {
@@ -75,7 +92,7 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
                     .resize(60, 60)
                     .centerCrop()
                     .transform(new RoundedTransformation(30, 0))
-                    .into(thumbnailView);
+                    .into(viewHolder.thumbnailView);
         } else {
 
             // otherwise we render a placeholder image
@@ -84,13 +101,20 @@ public class ArtistAdapter extends ArrayAdapter<SpotifyArtist> {
                     .resize(60, 60)
                     .centerCrop()
                     .transform(new RoundedTransformation(30, 0))
-                    .into(thumbnailView);
+                    .into(viewHolder.thumbnailView);
         }
 
         // and here we set the artist name
-        TextView artistNameView = (TextView) convertView.findViewById(R.id.list_item_artist_name);
-        artistNameView.setText(artist.getName());
+        viewHolder.artistNameView.setText(artist.getName());
 
         return convertView;
+    }
+
+    /**
+     * This is the ViewHolder class that will cache the UI elements
+     */
+    static class ArtistViewHolder {
+        ImageView thumbnailView;
+        TextView artistNameView;
     }
 }

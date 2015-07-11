@@ -58,6 +58,7 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
 
         // Gets the SpotifyTrack object from the ArrayAdapter at the appropriate position
         SpotifyTrack track = getItem(position);
+        TrackViewHolder viewHolder;
 
         // Adapters recycle views to AdapterViews.
         // If this is a new View object we're getting, then inflate the layout.
@@ -65,27 +66,46 @@ public class TrackAdapter extends ArrayAdapter<SpotifyTrack> {
         // and we modify the View widgets as usual.
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_track, parent, false);
+
+            // set up the view holder
+            viewHolder = new TrackViewHolder();
+            viewHolder.thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
+            viewHolder.trackNameView = (TextView) convertView.findViewById(R.id.list_item_track_name);
+            viewHolder.albumNameView = (TextView) convertView.findViewById(R.id.list_item_album_name);
+
+            // store the view holder with the view.
+            convertView.setTag(viewHolder);
+        } else {
+            // we use the viewHolder to avoid calling findViewById() on resource everytime
+            viewHolder = (TrackViewHolder) convertView.getTag();
         }
 
         // if the track contains a thumbnail image we set the icon view using Picasso
         if (!track.getThumbnailImageUrl().isEmpty()) {
-            ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
+            //ImageView thumbnailView = (ImageView) convertView.findViewById(R.id.list_item_icon);
 
             Picasso.with(getContext())
                     .load(track.getThumbnailImageUrl())
                     .resize(80, 80)
                     .centerCrop()
-                    .into(thumbnailView);
+                    .into(viewHolder.thumbnailView);
         }
 
         // set the track name
-        TextView trackNameView = (TextView) convertView.findViewById(R.id.list_item_track_name);
-        trackNameView.setText(track.getTrackName());
+        viewHolder.trackNameView.setText(track.getTrackName());
 
         // set the album name
-        TextView albumNameView = (TextView) convertView.findViewById(R.id.list_item_album_name);
-        albumNameView.setText(track.getAlbumName());
+        viewHolder.albumNameView.setText(track.getAlbumName());
 
         return convertView;
+    }
+
+    /**
+     * This is the ViewHolder class that will cache the UI elements
+     */
+    static class TrackViewHolder {
+        ImageView thumbnailView;
+        TextView trackNameView;
+        TextView albumNameView;
     }
 }
