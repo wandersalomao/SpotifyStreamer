@@ -22,4 +22,7 @@
     <string name="pref_country_key" translatable="false">country</string>
     <string name="pref_country_default" translatable="false">US</string>
 
+    <string name="title_activity_player">Player</string>
+    <string name="initial_time_track">0:00</string>
+
 </resources>

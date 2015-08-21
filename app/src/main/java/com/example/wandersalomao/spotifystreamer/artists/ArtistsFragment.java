@@ -26,7 +26,6 @@ import com.example.wandersalomao.spotifystreamer.R;
 import com.example.wandersalomao.spotifystreamer.Settings.SettingsActivity;
 import com.example.wandersalomao.spotifystreamer.artists.adapter.ArtistAdapter;
 import com.example.wandersalomao.spotifystreamer.artists.model.SpotifyArtist;
-import com.example.wandersalomao.spotifystreamer.tracks.TracksActivity;
 import com.example.wandersalomao.spotifystreamer.util.ConnectivityUtil;
 
 import java.util.ArrayList;
@@ -135,15 +134,11 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
 
-                // get the artist
-                SpotifyArtist artist = mArtistAdapter.getItem(position);
+                // get the selected artist and call the callback method
+                SpotifyArtist selectedArtist = mArtistAdapter.getItem(position);
+                Callback callback = (Callback) getActivity();
 
-                // create a new Intent associated to the TracksActivity
-                // pass the artist with the intent so that we can use it to retrieve the top 10 tracks
-                Intent intent = new Intent(getActivity(), TracksActivity.class)
-                        .putExtra(SpotifyArtist.ARTIST_KEY, artist);
-
-                startActivity(intent);
+                callback.onArtistSelected(selectedArtist);
             }
         });
 
@@ -173,11 +168,20 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
     public boolean onQueryTextChange(String newText) {
 
         if (ConnectivityUtil.isNetworkAvailable(getActivity())) {
+
+            // clean the top tracks if running on tablets
+            ArtistsActivity activity = (ArtistsActivity)getActivity();
+            if (activity.isTablet()) {
+                activity.onArtistSelected(null);
+            }
+
             // every time the user changes the text we execute the search
             mProgressBar.setVisibility(View.VISIBLE);
             FetchArtistsTask task = new FetchArtistsTask();
             task.execute(newText);
+
         } else {
+
             displayMessage(getString(R.string.error_connection));
         }
 
@@ -314,5 +318,19 @@ public class ArtistsFragment extends Fragment implements SearchView.OnQueryTextL
 
         }
     }
+
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface Callback {
+
+        /**
+         * ArtistsFragmentCallback for when an item has been selected.
+         */
+        public void onArtistSelected(SpotifyArtist selectedArtist);
+    }
+
 
 }

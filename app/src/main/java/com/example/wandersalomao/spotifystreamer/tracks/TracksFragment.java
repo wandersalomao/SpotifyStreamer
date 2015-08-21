@@ -1,5 +1,6 @@
 package com.example.wandersalomao.spotifystreamer.tracks;
 
+
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +14,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -71,17 +73,27 @@ public class TracksFragment extends Fragment {
 
         mProgressBar = (ProgressBar) rootView.findViewById(R.id.tracksProgressBar);
 
-        // if we don' have a previously saved state
-        if(savedInstanceState == null || !savedInstanceState.containsKey(CURRENT_LIST_KEY)) {
+        // if we don't have a previously saved state
+        if(savedInstanceState == null) {
 
             mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
 
-            // Inspect the intent for artist id data.
+            // if the intent exists with the corresponding key it means we are in single pane mode
             Intent intent = getActivity().getIntent();
-            if (intent != null) {
+            if (intent != null && intent.hasExtra(SpotifyArtist.ARTIST_KEY)) {
 
                 currentArtist = intent.getParcelableExtra(SpotifyArtist.ARTIST_KEY);
 
+            } else { // otherwise we are in dual pane mode
+
+                Bundle args = getArguments();
+                if (args != null) {
+                    currentArtist = args.getParcelable(SpotifyArtist.ARTIST_KEY);
+
+                }
+            }
+
+            if (currentArtist != null) {
                 if (ConnectivityUtil.isNetworkAvailable(getActivity())) {
                     mProgressBar.setVisibility(View.VISIBLE);
 
@@ -90,10 +102,8 @@ public class TracksFragment extends Fragment {
                 } else {
                     displayMessage(getString(R.string.error_connection));
                 }
-
-            } else {
-                Log.e(LOG_TAG, "Could not find the artist id");
             }
+
         } else {
 
             // in this case there is a previsouly saved state so instead of calling the remote
@@ -103,6 +113,7 @@ public class TracksFragment extends Fragment {
 
             mTrackAdapter = new TrackAdapter(getActivity(), new ArrayList<SpotifyTrack>());
             mTrackAdapter.addAll(list);
+
         }
 
         // Get a reference to the ListView, and attach this adapter to it.
@@ -112,8 +123,20 @@ public class TracksFragment extends Fragment {
         // set the emptyView template to be used when the list view is empty
         listView.setEmptyView(rootView.findViewById(R.id.empty));
 
+        // adding the listener to call the Player Activity when the user clicks on a track
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+
+                // call the callback method
+                Callback callback = (Callback)getActivity();
+                callback.onTrackSelected(mTrackAdapter.getTracks(), position, currentArtist.getName());
+            }
+        });
+
         // if the current artist has a thumbnail image we load it as the background image
-        if (!currentArtist.getThumbnailImageUrl().isEmpty()) {
+        if (currentArtist !=null && !currentArtist.getThumbnailImageUrl().isEmpty()) {
             // load the artist image as background
             ImageView artistBackground = (ImageView) rootView.findViewById(R.id.artist_image);
 
@@ -135,7 +158,7 @@ public class TracksFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         // we save the list of tracks and the current artist selected
         outState.putParcelableArrayList(CURRENT_LIST_KEY, new ArrayList<Parcelable>(mTrackAdapter.getTracks()));
-        outState.putParcelable(SpotifyArtist.ARTIST_KEY, this.currentArtist);
+        outState.putParcelable(SpotifyArtist.ARTIST_KEY, currentArtist);
         super.onSaveInstanceState(outState);
     }
 
@@ -165,6 +188,7 @@ public class TracksFragment extends Fragment {
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+
 
     /**
      * This is an internal class that will be used to download the top tracks of an artist in
@@ -219,7 +243,8 @@ public class TracksFragment extends Fragment {
                         topTracks.add(new SpotifyTrack(track.name,
                                 track.album.name,
                                 thumbnailUrl,
-                                track.preview_url));
+                                track.preview_url,
+                                track.duration_ms));
                     }
                 }
 
@@ -243,7 +268,7 @@ public class TracksFragment extends Fragment {
             // here we clear the adapter if no artists were returned
             if (spotifyTracks == null || spotifyTracks.isEmpty()) {
 
-                // if not artists were found we configure the message that will be shown to the user
+                // if no tracks were found we configure the message that will be shown to the user
                 emptyMessage = getString(R.string.no_tracks_found, currentArtist.getName());
                 mTrackAdapter.clear();
             } else {
@@ -261,6 +286,22 @@ public class TracksFragment extends Fragment {
             }
 
         }
+    }
+
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface Callback {
+
+        /**
+         * TracksFragmentCallback for when an item has been selected.
+         */
+        public void onTrackSelected(
+                List<SpotifyTrack> tracks,
+                int position,
+                String artistName);
     }
 
 }

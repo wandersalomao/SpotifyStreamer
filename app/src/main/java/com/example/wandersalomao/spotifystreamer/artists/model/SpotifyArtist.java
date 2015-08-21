@@ -14,6 +14,7 @@ public class SpotifyArtist implements Parcelable {
 
     // this is a constant used as a key to pass information (e.g using Intents)
     public static final String ARTIST_KEY = "artist";
+    public static final String ARTIST_NAME_KEY = "artist_name";
 
     private String spotifyId;
     private String name;

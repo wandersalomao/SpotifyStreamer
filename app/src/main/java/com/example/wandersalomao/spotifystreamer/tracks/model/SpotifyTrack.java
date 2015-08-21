@@ -11,16 +11,25 @@ import android.os.Parcelable;
  */
 public class SpotifyTrack implements Parcelable {
 
+    // this is a constant used as a key to pass information (e.g using Intents)
+    public static final String TRACK_KEY = "track";
+    public static final String TRACKS_KEY = "tracks";
+    public static final String CURRENT_TRACK_POSITION = "currentTrackPosition";
+    public static final String CURRENT_TRACK = "currentTrack";
+
     private String trackName;
     private String albumName;
     private String thumbnailImageUrl;
     private String previewUrl;
+    private long duration;
 
-    public SpotifyTrack(String trackName, String albumName, String thumbnailImageUrl, String previewUrl) {
+    public SpotifyTrack(String trackName, String albumName, String thumbnailImageUrl,
+                        String previewUrl, long duration) {
         this.trackName = trackName;
         this.albumName = albumName;
         this.thumbnailImageUrl = thumbnailImageUrl;
         this.previewUrl = previewUrl;
+        this.duration = duration;
     }
 
     public String getAlbumName() {
@@ -39,6 +48,10 @@ public class SpotifyTrack implements Parcelable {
         return previewUrl;
     }
 
+    public long getDuration() {
+        return duration;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -50,6 +63,7 @@ public class SpotifyTrack implements Parcelable {
         dest.writeString(albumName);
         dest.writeString(thumbnailImageUrl);
         dest.writeString(previewUrl);
+        dest.writeLong(duration);
     }
 
     /**
@@ -61,6 +75,7 @@ public class SpotifyTrack implements Parcelable {
         this.albumName = in.readString();
         this.thumbnailImageUrl = in.readString();
         this.previewUrl = in.readString();
+        this.duration = in.readLong();
     }
 
     public static final Parcelable.Creator<SpotifyTrack> CREATOR = new Parcelable.Creator<SpotifyTrack>() {
