@@ -323,16 +323,31 @@ public class PlayerFragment extends DialogFragment {
     private void initializeViews(View rootView){
 
         // initialize the views
-        this.artistName = (TextView) rootView.findViewById(R.id.artistName);
-        this.albumName = (TextView) rootView.findViewById(R.id.albumName);
-        this.trackName = (TextView) rootView.findViewById(R.id.trackName);
-        this.currentTime = (TextView) rootView.findViewById(R.id.currentTime);
-        this.duration = (TextView) rootView.findViewById(R.id.duration);
-        this.albumImage = (ImageView) rootView.findViewById(R.id.albumImage);
-        this.seekBar = (SeekBar) rootView.findViewById(R.id.seekBar);
-        this.previousTrack = (ImageButton) rootView.findViewById(R.id.previousTrack);
-        this.playPauseTrack = (ImageButton) rootView.findViewById(R.id.playPauseTrack);
-        this.nextTrack = (ImageButton) rootView.findViewById(R.id.nextTrack);
+        artistName = (TextView) rootView.findViewById(R.id.artistName);
+        albumName = (TextView) rootView.findViewById(R.id.albumName);
+        trackName = (TextView) rootView.findViewById(R.id.trackName);
+        currentTime = (TextView) rootView.findViewById(R.id.currentTime);
+        duration = (TextView) rootView.findViewById(R.id.duration);
+        albumImage = (ImageView) rootView.findViewById(R.id.albumImage);
+        previousTrack = (ImageButton) rootView.findViewById(R.id.previousTrack);
+        playPauseTrack = (ImageButton) rootView.findViewById(R.id.playPauseTrack);
+        nextTrack = (ImageButton) rootView.findViewById(R.id.nextTrack);
+
+        // getting the SeekBar and making it scrubbable
+        seekBar = (SeekBar) rootView.findViewById(R.id.seekBar);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && musicSrv != null) {
+                    musicSrv.seekTo(progress);
+                }
+            }
+
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
     }
 
     /**

@@ -284,7 +284,6 @@ public class TracksFragment extends Fragment {
             } else {
                 Log.w(LOG_TAG, "Was not able to retrieve the empty view layout");
             }
-
         }
     }
 

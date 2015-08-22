@@ -179,6 +179,15 @@ public class MusicService extends Service implements
     }
 
     /**
+     * This method will set the media player progress to the given progress selected by the user.
+     *
+     * @param progress The progress user has selected
+     */
+    public void seekTo(int progress){
+        mediaPlayer.seekTo(progress);
+    }
+
+    /**
      * This method is called to release the service. It removes the callbacks and the media player
      */
     public void release(){
